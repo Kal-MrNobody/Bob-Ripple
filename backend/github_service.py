@@ -264,6 +264,40 @@ async def get_repo_structure(repo_url: str, token: str) -> Dict[str, Any]:
                 elif ext in doc_extensions or any(file_path.startswith(prefix) for prefix in doc_prefixes):
                     doc_files.append(file_path)
             
+            # Sort source files by importance before capping
+            def source_file_priority(path):
+                """Return priority score for source files (lower = higher priority)"""
+                path_lower = path.lower()
+                filename = os.path.basename(path_lower)
+                depth = path.count('/')
+                
+                # Priority 1: Root or one level deep
+                if depth <= 1:
+                    priority = 0
+                else:
+                    priority = 100
+                
+                # Priority 2: NOT in docs_src/, examples/, or scripts/
+                if any(path.startswith(folder) for folder in ['docs_src/', 'examples/', 'scripts/']):
+                    priority += 200
+                
+                # Priority 3: Important file names
+                important_keywords = ['main', 'app', 'core', 'api', 'router', 'model', 'service', 'util', 'config', 'auth']
+                if any(keyword in filename for keyword in important_keywords):
+                    priority -= 50
+                
+                return priority
+            
+            # Sort test files to prioritize test_ prefix
+            def test_file_priority(path):
+                """Return priority score for test files (lower = higher priority)"""
+                filename = os.path.basename(path.lower())
+                return 0 if filename.startswith('test_') else 1
+            
+            # Apply sorting
+            source_files.sort(key=source_file_priority)
+            test_files.sort(key=test_file_priority)
+            
             # Cap each list independently to ensure balanced sampling
             source_files = source_files[:150]
             test_files = test_files[:50]
