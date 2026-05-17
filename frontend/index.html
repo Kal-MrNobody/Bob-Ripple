@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bob Ripple - GitHub PR Impact Analyzer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">🌊 Bob Ripple</h1>
+            <p class="subtitle">AI-Powered GitHub PR Impact Analysis</p>
+        </header>
+
+        <main class="main">
+            <!-- Input Form -->
+            <section class="input-section">
+                <form id="analyzeForm" class="form">
+                    <div class="form-group">
+                        <label for="repoUrl" class="label">Repository URL</label>
+                        <input 
+                            type="text" 
+                            id="repoUrl" 
+                            class="input"
+                            placeholder="https://github.com/owner/repo or owner/repo"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="prNumber" class="label">Pull Request Number</label>
+                        <input 
+                            type="number" 
+                            id="prNumber" 
+                            class="input"
+                            placeholder="123"
+                            min="1"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="analyzeBtn">
+                        <span id="btnText">Analyze Impact</span>
+                        <span id="btnLoader" class="loader" style="display: none;"></span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Loading State -->
+            <section id="loadingSection" class="loading-section" style="display: none;">
+                <div class="spinner"></div>
+                <p class="loading-text">Analyzing PR impact...</p>
+            </section>
+
+            <!-- Error State -->
+            <section id="errorSection" class="error-section" style="display: none;">
+                <div class="error-card">
+                    <div class="error-icon">❌</div>
+                    <h3 class="error-title">Analysis Failed</h3>
+                    <p id="errorMessage" class="error-message"></p>
+                </div>
+            </section>
+
+            <!-- Results -->
+            <section id="resultsSection" class="results-section" style="display: none;">
+                <!-- Risk Badge -->
+                <div class="risk-header">
+                    <h2 id="prTitle" class="pr-title"></h2>
+                    <span id="riskBadge" class="risk-badge"></span>
+                </div>
+
+                <div class="repo-info">
+                    <span class="repo-label">Repository:</span>
+                    <span id="repoName" class="repo-value"></span>
+                    <span class="repo-label">PR:</span>
+                    <span id="prNumber" class="repo-value"></span>
+                </div>
+
+                <!-- Summary -->
+                <div class="summary-card">
+                    <h3 class="section-title">📋 Summary</h3>
+                    <p id="summaryText" class="summary-text"></p>
+                </div>
+
+                <!-- Affected Files -->
+                <div class="section">
+                    <h3 class="section-title">📁 Affected Files</h3>
+                    <div id="affectedFiles" class="files-grid"></div>
+                </div>
+
+                <!-- Tests to Update -->
+                <div class="section">
+                    <h3 class="section-title">🧪 Tests to Update</h3>
+                    <div id="staleTests" class="list-container"></div>
+                </div>
+
+                <!-- Stale Docs -->
+                <div class="section">
+                    <h3 class="section-title">📚 Stale Documentation</h3>
+                    <div id="staleDocs" class="list-container"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>Powered by Google Gemini AI | Built with ❤️ by Bob</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
