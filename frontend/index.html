@@ -3,197 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bob Ripple - GitHub PR Impact Analyzer</title>
+    <title>🌊 Bob Ripple - Repository Analytics Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1 class="title">🌊 Bob Ripple</h1>
-            <p class="subtitle">AI-Powered GitHub Analysis</p>
-        </header>
-
-        <main class="main">
-            <!-- Tab Navigation -->
-            <div class="tab-bar">
-                <button class="tab-btn active" data-tab="pr">🔍 PR Impact Analysis</button>
-                <button class="tab-btn" data-tab="scan">🏥 Repo Health Scan</button>
+    <!-- Top Navbar - Unified Command Bar -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">🌊 Bob Ripple</div>
+            <div id="repoNamePill" class="repo-name-pill"></div>
+            <div class="navbar-inputs">
+                <input 
+                    type="text" 
+                    id="repoUrlInput" 
+                    class="navbar-input repo-input" 
+                    placeholder="GitHub repository URL"
+                    autocomplete="off"
+                >
+                <div class="input-divider"></div>
+                <input 
+                    type="number" 
+                    id="prNumberInput" 
+                    class="navbar-input pr-input" 
+                    placeholder="PR # (optional)"
+                    min="1"
+                    autocomplete="off"
+                >
             </div>
+            <button id="analyzeBtn" class="navbar-btn">Analyze</button>
+        </div>
+        <div id="healthBar" class="health-bar"></div>
+    </nav>
 
-            <!-- Input Section -->
-            <section class="input-section">
-                <form id="analyzeForm" class="form">
-                    <!-- PR Analysis Inputs -->
-                    <div id="prInputs" class="tab-content active">
-                        <div class="form-group">
-                            <label for="prRepoUrl" class="label">Repository URL</label>
-                            <input 
-                                type="text" 
-                                id="prRepoUrl" 
-                                class="input"
-                                placeholder="https://github.com/owner/repo or owner/repo"
-                            >
-                        </div>
-
-                        <div class="form-group">
-                            <label for="prNumber" class="label">Pull Request Number</label>
-                            <input 
-                                type="number" 
-                                id="prNumber" 
-                                class="input"
-                                placeholder="123"
-                                min="1"
-                            >
-                        </div>
+    <!-- Hero Landing Section -->
+    <div id="heroSection" class="hero-section">
+        <div class="hero-content">
+            <div class="hero-wave">☕</div>
+            <h1 class="hero-headline">Know your codebase.</h1>
+            <p class="hero-subline">
+                Paste any GitHub URL above. Bob reads the entire repo, 
+                maps what's fragile, and predicts what breaks before it does.
+            </p>
+            <div class="hero-features">
+                <div class="feature-pill">⚡ Repo Health Score</div>
+                <div class="feature-pill">🔍 Fragile File Detection</div>
+                <div class="feature-pill">🔀 PR Impact Analysis</div>
+            </div>
+            <div class="hero-cards">
+                <div class="hero-card">
+                    <h3 class="hero-card-title">Try an example</h3>
+                    <div class="example-buttons">
+                        <button class="example-pill" data-repo="https://github.com/pallets/flask">
+                            pallets/flask
+                        </button>
+                        <button class="example-pill" data-repo="https://github.com/fastapi/fastapi">
+                            fastapi/fastapi
+                        </button>
                     </div>
-
-                    <!-- Repo Scan Inputs -->
-                    <div id="scanInputs" class="tab-content">
-                        <div class="form-group">
-                            <label for="scanRepoUrl" class="label">Repository URL</label>
-                            <input 
-                                type="text" 
-                                id="scanRepoUrl" 
-                                class="input"
-                                placeholder="https://github.com/owner/repo or owner/repo"
-                            >
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn-primary" id="analyzeBtn">
-                        <span id="btnText">Analyze Impact</span>
-                        <span id="btnLoader" class="loader" style="display: none;"></span>
-                    </button>
-                </form>
-            </section>
-
-            <!-- Loading State -->
-            <section id="loadingSection" class="loading-section" style="display: none;">
-                <div class="spinner"></div>
-                <p id="loadingText" class="loading-text">Analyzing PR impact...</p>
-            </section>
-
-            <!-- Error State -->
-            <section id="errorSection" class="error-section" style="display: none;">
-                <div class="error-card">
-                    <div class="error-icon">❌</div>
-                    <h3 class="error-title">Analysis Failed</h3>
-                    <p id="errorMessage" class="error-message"></p>
+                    <div class="hero-divider"></div>
+                    <label class="hero-input-label">Or paste your own</label>
+                    <input
+                        type="text"
+                        id="heroRepoInput"
+                        class="hero-input"
+                        placeholder="https://github.com/owner/repo"
+                        autocomplete="off"
+                    >
                 </div>
-            </section>
-
-            <!-- PR Analysis Results -->
-            <section id="prResultsSection" class="results-section" style="display: none;">
-                <div class="risk-header">
-                    <h2 id="prTitle" class="pr-title"></h2>
-                    <span id="riskBadge" class="risk-badge"></span>
-                </div>
-
-                <div class="repo-info">
-                    <span class="repo-label">Repository:</span>
-                    <span id="repoName" class="repo-value"></span>
-                    <span class="repo-label">PR:</span>
-                    <span id="prNumberDisplay" class="repo-value"></span>
-                </div>
-
-                <div class="summary-card">
-                    <h3 class="section-title">📋 Summary</h3>
-                    <p id="summaryText" class="summary-text"></p>
-                </div>
-
-                <div class="section">
-                    <h3 class="section-title">📁 Affected Files</h3>
-                    <div id="affectedFiles" class="files-grid"></div>
-                </div>
-
-                <div class="section">
-                    <h3 class="section-title">🧪 Tests to Update</h3>
-                    <div id="staleTests" class="list-container"></div>
-                </div>
-
-                <div class="section">
-                    <h3 class="section-title">📚 Stale Documentation</h3>
-                    <div id="staleDocs" class="list-container"></div>
-                </div>
-            </section>
-
-            <!-- Repo Health Scan Results -->
-            <section id="scanResultsSection" class="results-section" style="display: none;">
-                <div class="health-grade-container">
-                    <div id="healthGrade" class="health-grade"></div>
-                </div>
-
-                <div class="repo-info-bar">
-                    <div class="repo-info-item">
-                        <span class="info-label">Repository</span>
-                        <span id="scanRepoName" class="info-value"></span>
-                    </div>
-                    <div class="repo-info-item">
-                        <span class="info-label">Language</span>
-                        <span id="scanLanguage" class="info-value"></span>
-                    </div>
-                    <div class="repo-info-item">
-                        <span class="info-label">Stars</span>
-                        <span id="scanStars" class="info-value"></span>
-                    </div>
-                    <div class="repo-info-item">
-                        <span class="info-label">Total Files</span>
-                        <span id="scanTotalFiles" class="info-value"></span>
+                <div class="hero-card">
+                    <h3 class="hero-card-title">Powered by IBM Bob</h3>
+                    <p class="hero-card-body">
+                        Bob Ripple uses IBM Bob's full repository context understanding
+                        to map what's fragile, predict what breaks, and surface risks
+                        before they reach production.
+                    </p>
+                    <div class="hero-stats">
+                        <div class="hero-stat">☕ Built entirely with IBM Bob IDE</div>
+                        <div class="hero-stat">🔍 Gemini 2.5 Pro reasoning engine</div>
+                        <div class="hero-stat">⚡ Real GitHub API — no hardcoded data</div>
                     </div>
                 </div>
-
-                <div class="stats-row">
-                    <div class="stat-card">
-                        <div id="sourceCount" class="stat-number"></div>
-                        <div class="stat-label">Source Files</div>
-                    </div>
-                    <div class="stat-card">
-                        <div id="testCount" class="stat-number"></div>
-                        <div class="stat-label">Test Files</div>
-                    </div>
-                    <div class="stat-card">
-                        <div id="docCount" class="stat-number"></div>
-                        <div class="stat-label">Doc Files</div>
-                    </div>
-                </div>
-
-                <div class="summary-card">
-                    <h3 class="section-title">📊 Health Summary</h3>
-                    <p id="healthSummary" class="summary-text"></p>
-                </div>
-
-                <div class="section">
-                    <h3 class="section-title">⚠️ Top Risks</h3>
-                    <ol id="topRisks" class="numbered-list"></ol>
-                </div>
-
-                <div class="section">
-                    <h3 class="section-title">🔬 Untested Modules</h3>
-                    <div id="untestedModules" class="list-container"></div>
-                </div>
-
-                <div class="section">
-                    <h3 class="section-title">🔧 Fragile Files</h3>
-                    <div id="fragileFiles" class="files-grid"></div>
-                </div>
-
-                <div class="section">
-                    <h3 class="section-title">📄 Stale Documentation</h3>
-                    <div id="scanStaleDocs" class="list-container"></div>
-                </div>
-
-                <div class="section">
-                    <h3 class="section-title">💡 Recommendations</h3>
-                    <ol id="recommendations" class="recommendations-list"></ol>
-                </div>
-            </section>
-        </main>
-
-        <footer class="footer">
-            <p>Powered by Google Gemini AI | Built with ❤️ by Bob</p>
-        </footer>
+            </div>
+        </div>
     </div>
 
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="pulse-dots">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+            <p class="loading-message" id="loadingMessage">Analyzing repository...</p>
+        </div>
+    </div>
+
+    <!-- Dashboard Container -->
+    <div id="dashboard" class="dashboard">
+        <!-- Row 1: Metric Cards -->
+        <div class="metrics-row">
+            <div class="metric-card">
+                <div class="metric-label">Health Grade</div>
+                <div class="metric-value health-grade" id="healthGrade">-</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Source Files</div>
+                <div class="metric-value" id="sourceFiles">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Test Files</div>
+                <div class="metric-value" id="testFiles">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Test Coverage</div>
+                <div class="metric-value" id="testCoverage">0%</div>
+            </div>
+        </div>
+
+        <!-- Row 2: Charts -->
+        <div class="charts-row">
+            <div class="chart-card chart-card-left">
+                <h3 class="chart-title">Risk Distribution</h3>
+                <div class="chart-container">
+                    <canvas id="riskDonutChart"></canvas>
+                    <div class="chart-center-text" id="riskCenterText">0</div>
+                </div>
+            </div>
+            <div class="chart-card chart-card-right">
+                <h3 class="chart-title">File Breakdown</h3>
+                <div class="chart-container">
+                    <canvas id="fileBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Fragile Files & Untested Modules -->
+        <div class="data-row">
+            <div class="data-card data-card-left">
+                <h3 class="section-title">Fragile Files</h3>
+                <div id="fragileFilesContainer" class="fragile-files-container"></div>
+            </div>
+            <div class="data-card data-card-right">
+                <h3 class="section-title">Untested Modules</h3>
+                <div id="untestedModulesContainer" class="untested-modules-container"></div>
+            </div>
+        </div>
+
+        <!-- Row 4: Top Risks & Recommendations -->
+        <div class="insights-row">
+            <div class="insights-card insights-card-left">
+                <h3 class="section-title">Top Risks</h3>
+                <ol id="topRisksList" class="numbered-list risk-list"></ol>
+            </div>
+            <div class="insights-card insights-card-right">
+                <h3 class="section-title">Recommendations</h3>
+                <ol id="recommendationsList" class="numbered-list recommendation-list"></ol>
+            </div>
+        </div>
+
+        <!-- Row 5: PR Impact Analysis Results -->
+        <div id="prResultsPanel" class="pr-results-panel">
+            <h2 class="pr-panel-title">PR Impact Analysis</h2>
+            
+            <div id="prPlaceholder" class="pr-placeholder">
+                <div class="placeholder-icon">🔍</div>
+                <p class="placeholder-text">Enter a PR number in the navbar above to analyze impact</p>
+            </div>
+            
+            <div id="prResults" class="pr-results">
+                <div class="pr-results-grid">
+                    <div class="pr-summary-col">
+                        <div class="pr-risk-badge" id="prRiskBadge">MEDIUM</div>
+                        <h4 class="pr-title" id="prTitle">Pull Request #0</h4>
+                        <p class="pr-summary" id="prSummary"></p>
+                    </div>
+                    
+                    <div class="pr-files-col">
+                        <h4 class="pr-section-title">Affected Files</h4>
+                        <div id="affectedFilesContainer" class="affected-files-container"></div>
+                    </div>
+                    
+                    <div class="pr-updates-col">
+                        <div class="pr-chart-container">
+                            <canvas id="prRiskDonutChart"></canvas>
+                            <div class="chart-center-text" id="prRiskCenterText">0</div>
+                        </div>
+                        
+                        <div class="pr-lists">
+                            <div class="pr-list-section">
+                                <h5 class="pr-list-title">Tests to Update</h5>
+                                <div id="staleTestsList" class="pr-list"></div>
+                            </div>
+                            <div class="pr-list-section">
+                                <h5 class="pr-list-title">Stale Docs</h5>
+                                <div id="staleDocsList" class="pr-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
