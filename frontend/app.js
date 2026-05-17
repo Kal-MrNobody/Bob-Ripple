@@ -1,7 +1,7 @@
 // API Configuration
 const API_BASE = window.location.hostname === 'localhost'
     ? 'http://localhost:8000'
-    : 'https://bob-ripple-api.onrender.com';
+    : 'https://bob-ripple.onrender.com';
 
 // State
 let currentRepoUrl = '';
