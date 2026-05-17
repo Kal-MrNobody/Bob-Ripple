@@ -1,9 +1,9 @@
 import httpx
 import os
 import json
-from typing import Dict, Any
+from typing import Dict, Any, List
 from dotenv import load_dotenv
-from models import ImpactReport, AffectedFile
+from models import ImpactReport, AffectedFile, FragileFile
 
 load_dotenv()
 
@@ -220,5 +220,110 @@ Consider:
             stale_docs=stale_docs,
             summary=summary
         )
+    
+    async def analyze_repo_health(
+        self,
+        source_files: List[str],
+        test_files: List[str],
+        doc_files: List[str],
+        metadata: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Analyze repository health using Google Gemini API.
+        
+        Args:
+            source_files: List of source code file paths
+            test_files: List of test file paths
+            doc_files: List of documentation file paths
+            metadata: Repository metadata
+            
+        Returns:
+            Dictionary with health analysis results
+        """
+        # Build prompt
+        source_list = "\n".join(source_files[:50])  # Limit to first 50 for prompt size
+        test_list = "\n".join(test_files[:50])
+        doc_list = "\n".join(doc_files[:50])
+        
+        prompt = f"""You are a senior software architect doing a repository health assessment.
+
+Repository: {metadata.get('name', 'Unknown')}
+Language: {metadata.get('language', 'Unknown')}
+
+Source files ({len(source_files)} total):
+{source_list}
+
+Test files ({len(test_files)} total):
+{test_list}
+
+Doc files ({len(doc_files)} total):
+{doc_list}
+
+Analyze this repository structure and return ONLY valid JSON no markdown:
+{{
+  "health_score": "A or B or C or D",
+  "health_summary": "2-3 sentence overall assessment",
+  "untested_modules": ["list of source file paths with no corresponding test"],
+  "fragile_files": [{{"path": "string", "reason": "string", "risk": "high|medium|low"}}],
+  "stale_docs": ["list of doc files likely outdated based on structure"],
+  "top_risks": ["3 specific risks in plain English"],
+  "recommendations": ["3 actionable improvements"]
+}}"""
+        
+        # Build request payload
+        payload = {
+            "contents": [{
+                "parts": [{
+                    "text": prompt
+                }]
+            }],
+            "generationConfig": {
+                "temperature": 1,
+                "responseMimeType": "application/json",
+                "thinkingConfig": {"thinkingBudget": 1024}
+            }
+        }
+        
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": self.api_key
+        }
+        
+        try:
+            # Call Gemini API
+            async with httpx.AsyncClient() as client:
+                response = await client.post(self.api_url, headers=headers, json=payload, timeout=60.0)
+                response.raise_for_status()
+                result = response.json()
+            
+            # Extract generated text
+            generated_text = result["candidates"][0]["content"]["parts"][0]["text"]
+            
+            # Parse JSON response
+            try:
+                analysis_data = json.loads(generated_text)
+                return analysis_data
+            except json.JSONDecodeError:
+                # Return default structure on parse failure
+                return {
+                    "health_score": "unknown",
+                    "health_summary": "Analysis unavailable — please try again.",
+                    "untested_modules": [],
+                    "fragile_files": [],
+                    "stale_docs": [],
+                    "top_risks": [],
+                    "recommendations": []
+                }
+        except Exception:
+            # Return default structure on any error
+            return {
+                "health_score": "unknown",
+                "health_summary": "Analysis unavailable — please try again.",
+                "untested_modules": [],
+                "fragile_files": [],
+                "stale_docs": [],
+                "top_risks": [],
+                "recommendations": []
+            }
 
 # Made with Bob

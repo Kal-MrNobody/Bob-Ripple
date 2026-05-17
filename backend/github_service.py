@@ -1,3 +1,4 @@
+import os
 import httpx
 from typing import Dict, Any, Tuple, List
 from fastapi import HTTPException
@@ -163,6 +164,124 @@ async def get_pr_diff(repo_url: str, pr_number: int, token: str) -> Tuple[str, L
                 raise HTTPException(
                     status_code=404,
                     detail=f"Pull request #{pr_number} not found in repository {owner}/{repo}. Please verify the PR number and repository URL."
+                )
+            elif e.response.status_code == 401:
+                raise HTTPException(
+                    status_code=401,
+                    detail="GitHub authentication failed. Please check your GITHUB_TOKEN in the .env file."
+                )
+            else:
+                raise HTTPException(
+                    status_code=e.response.status_code,
+                    detail=f"GitHub API error: {e.response.text}"
+                )
+        except httpx.RequestError as e:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Failed to connect to GitHub API: {str(e)}"
+            )
+
+
+async def get_repo_structure(repo_url: str, token: str) -> Dict[str, Any]:
+    """
+    Fetch repository structure and metadata from GitHub API.
+    
+    Args:
+        repo_url: GitHub repository URL
+        token: GitHub personal access token
+        
+    Returns:
+        Dictionary containing:
+        - source_files: List of source code files
+        - test_files: List of test files
+        - doc_files: List of documentation files
+        - metadata: Repository metadata
+        - total_files: Total number of files
+        
+    Raises:
+        HTTPException: If GitHub API returns error
+    """
+    try:
+        owner, repo = parse_repo_url(repo_url)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    headers = {
+        "Accept": "application/vnd.github.v3+json",
+        "Authorization": f"Bearer {token}" if token else ""
+    }
+    
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        try:
+            # Get repository metadata
+            repo_url_api = f"https://api.github.com/repos/{owner}/{repo}"
+            repo_response = await client.get(repo_url_api, headers=headers, timeout=30.0)
+            repo_response.raise_for_status()
+            repo_data = repo_response.json()
+            
+            metadata = {
+                "name": repo_data.get("full_name", f"{owner}/{repo}"),
+                "description": repo_data.get("description", ""),
+                "language": repo_data.get("language", "Unknown"),
+                "stargazers_count": repo_data.get("stargazers_count", 0),
+                "forks_count": repo_data.get("forks_count", 0)
+            }
+            
+            # Get repository tree structure
+            tree_url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/HEAD?recursive=1"
+            tree_response = await client.get(tree_url, headers=headers, timeout=30.0)
+            tree_response.raise_for_status()
+            tree_data = tree_response.json()
+            
+            # Extract ALL file paths from tree
+            all_files = [item["path"] for item in tree_data.get("tree", []) if item["type"] == "blob"]
+            total_files_count = len(all_files)
+            
+            # Categorize ALL files first
+            source_extensions = {'.py', '.js', '.ts', '.go', '.java', '.rs', '.cpp',
+                               '.c', '.cs', '.rb', '.php', '.swift', '.kt'}
+            test_keywords = ['test', 'spec', '__test__', 'tests/']
+            doc_extensions = {'.md', '.rst', '.txt'}
+            doc_prefixes = ['docs/', 'doc/', 'documentation/']
+            
+            source_files = []
+            test_files = []
+            doc_files = []
+            
+            # Classify all files
+            for file_path in all_files:
+                # Get file extension
+                ext = os.path.splitext(file_path)[1].lower()
+                path_lower = file_path.lower()
+                
+                # Check if it's a test file (test check first)
+                if ext in source_extensions and any(keyword in path_lower for keyword in test_keywords):
+                    test_files.append(file_path)
+                # Check if it's a source file (not a test)
+                elif ext in source_extensions:
+                    source_files.append(file_path)
+                # Check if it's a doc file
+                elif ext in doc_extensions or any(file_path.startswith(prefix) for prefix in doc_prefixes):
+                    doc_files.append(file_path)
+            
+            # Cap each list independently to ensure balanced sampling
+            source_files = source_files[:150]
+            test_files = test_files[:50]
+            doc_files = doc_files[:100]
+            
+            return {
+                "source_files": source_files,
+                "test_files": test_files,
+                "doc_files": doc_files,
+                "metadata": metadata,
+                "total_files": total_files_count
+            }
+            
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Repository {owner}/{repo} not found. Please verify the repository URL."
                 )
             elif e.response.status_code == 401:
                 raise HTTPException(

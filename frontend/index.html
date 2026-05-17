@@ -10,34 +10,54 @@
     <div class="container">
         <header class="header">
             <h1 class="title">🌊 Bob Ripple</h1>
-            <p class="subtitle">AI-Powered GitHub PR Impact Analysis</p>
+            <p class="subtitle">AI-Powered GitHub Analysis</p>
         </header>
 
         <main class="main">
-            <!-- Input Form -->
+            <!-- Tab Navigation -->
+            <div class="tab-bar">
+                <button class="tab-btn active" data-tab="pr">🔍 PR Impact Analysis</button>
+                <button class="tab-btn" data-tab="scan">🏥 Repo Health Scan</button>
+            </div>
+
+            <!-- Input Section -->
             <section class="input-section">
                 <form id="analyzeForm" class="form">
-                    <div class="form-group">
-                        <label for="repoUrl" class="label">Repository URL</label>
-                        <input 
-                            type="text" 
-                            id="repoUrl" 
-                            class="input"
-                            placeholder="https://github.com/owner/repo or owner/repo"
-                            required
-                        >
+                    <!-- PR Analysis Inputs -->
+                    <div id="prInputs" class="tab-content active">
+                        <div class="form-group">
+                            <label for="prRepoUrl" class="label">Repository URL</label>
+                            <input 
+                                type="text" 
+                                id="prRepoUrl" 
+                                class="input"
+                                placeholder="https://github.com/owner/repo or owner/repo"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="prNumber" class="label">Pull Request Number</label>
+                            <input 
+                                type="number" 
+                                id="prNumber" 
+                                class="input"
+                                placeholder="123"
+                                min="1"
+                            >
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="prNumber" class="label">Pull Request Number</label>
-                        <input 
-                            type="number" 
-                            id="prNumber" 
-                            class="input"
-                            placeholder="123"
-                            min="1"
-                            required
-                        >
+                    <!-- Repo Scan Inputs -->
+                    <div id="scanInputs" class="tab-content">
+                        <div class="form-group">
+                            <label for="scanRepoUrl" class="label">Repository URL</label>
+                            <input 
+                                type="text" 
+                                id="scanRepoUrl" 
+                                class="input"
+                                placeholder="https://github.com/owner/repo or owner/repo"
+                            >
+                        </div>
                     </div>
 
                     <button type="submit" class="btn-primary" id="analyzeBtn">
@@ -50,7 +70,7 @@
             <!-- Loading State -->
             <section id="loadingSection" class="loading-section" style="display: none;">
                 <div class="spinner"></div>
-                <p class="loading-text">Analyzing PR impact...</p>
+                <p id="loadingText" class="loading-text">Analyzing PR impact...</p>
             </section>
 
             <!-- Error State -->
@@ -62,9 +82,8 @@
                 </div>
             </section>
 
-            <!-- Results -->
-            <section id="resultsSection" class="results-section" style="display: none;">
-                <!-- Risk Badge -->
+            <!-- PR Analysis Results -->
+            <section id="prResultsSection" class="results-section" style="display: none;">
                 <div class="risk-header">
                     <h2 id="prTitle" class="pr-title"></h2>
                     <span id="riskBadge" class="risk-badge"></span>
@@ -74,31 +93,98 @@
                     <span class="repo-label">Repository:</span>
                     <span id="repoName" class="repo-value"></span>
                     <span class="repo-label">PR:</span>
-                    <span id="prNumber" class="repo-value"></span>
+                    <span id="prNumberDisplay" class="repo-value"></span>
                 </div>
 
-                <!-- Summary -->
                 <div class="summary-card">
                     <h3 class="section-title">📋 Summary</h3>
                     <p id="summaryText" class="summary-text"></p>
                 </div>
 
-                <!-- Affected Files -->
                 <div class="section">
                     <h3 class="section-title">📁 Affected Files</h3>
                     <div id="affectedFiles" class="files-grid"></div>
                 </div>
 
-                <!-- Tests to Update -->
                 <div class="section">
                     <h3 class="section-title">🧪 Tests to Update</h3>
                     <div id="staleTests" class="list-container"></div>
                 </div>
 
-                <!-- Stale Docs -->
                 <div class="section">
                     <h3 class="section-title">📚 Stale Documentation</h3>
                     <div id="staleDocs" class="list-container"></div>
+                </div>
+            </section>
+
+            <!-- Repo Health Scan Results -->
+            <section id="scanResultsSection" class="results-section" style="display: none;">
+                <div class="health-grade-container">
+                    <div id="healthGrade" class="health-grade"></div>
+                </div>
+
+                <div class="repo-info-bar">
+                    <div class="repo-info-item">
+                        <span class="info-label">Repository</span>
+                        <span id="scanRepoName" class="info-value"></span>
+                    </div>
+                    <div class="repo-info-item">
+                        <span class="info-label">Language</span>
+                        <span id="scanLanguage" class="info-value"></span>
+                    </div>
+                    <div class="repo-info-item">
+                        <span class="info-label">Stars</span>
+                        <span id="scanStars" class="info-value"></span>
+                    </div>
+                    <div class="repo-info-item">
+                        <span class="info-label">Total Files</span>
+                        <span id="scanTotalFiles" class="info-value"></span>
+                    </div>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div id="sourceCount" class="stat-number"></div>
+                        <div class="stat-label">Source Files</div>
+                    </div>
+                    <div class="stat-card">
+                        <div id="testCount" class="stat-number"></div>
+                        <div class="stat-label">Test Files</div>
+                    </div>
+                    <div class="stat-card">
+                        <div id="docCount" class="stat-number"></div>
+                        <div class="stat-label">Doc Files</div>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <h3 class="section-title">📊 Health Summary</h3>
+                    <p id="healthSummary" class="summary-text"></p>
+                </div>
+
+                <div class="section">
+                    <h3 class="section-title">⚠️ Top Risks</h3>
+                    <ol id="topRisks" class="numbered-list"></ol>
+                </div>
+
+                <div class="section">
+                    <h3 class="section-title">🔬 Untested Modules</h3>
+                    <div id="untestedModules" class="list-container"></div>
+                </div>
+
+                <div class="section">
+                    <h3 class="section-title">🔧 Fragile Files</h3>
+                    <div id="fragileFiles" class="files-grid"></div>
+                </div>
+
+                <div class="section">
+                    <h3 class="section-title">📄 Stale Documentation</h3>
+                    <div id="scanStaleDocs" class="list-container"></div>
+                </div>
+
+                <div class="section">
+                    <h3 class="section-title">💡 Recommendations</h3>
+                    <ol id="recommendations" class="recommendations-list"></ol>
                 </div>
             </section>
         </main>

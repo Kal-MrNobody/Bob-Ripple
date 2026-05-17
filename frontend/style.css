@@ -64,6 +64,47 @@ body {
     gap: 2rem;
 }
 
+/* Tab Bar */
+.tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 2rem;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 1rem 2rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-muted);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    bottom: -2px;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(0, 98, 255, 0.05);
+}
+
+.tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
 /* Input Section */
 .input-section {
     background: var(--bg-secondary);
@@ -418,6 +459,152 @@ body {
 @media (max-width: 768px) {
     .container {
         padding: 1rem;
+    }
+    
+    /* Health Grade Badge */
+    .health-grade-container {
+        text-align: center;
+        margin: 2rem 0;
+    }
+    
+    .health-grade {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        font-size: 72px;
+        font-weight: 700;
+        color: white;
+    }
+    
+    .health-grade.grade-a {
+        background: #42be65;
+    }
+    
+    .health-grade.grade-b {
+        background: #0062ff;
+    }
+    
+    .health-grade.grade-c {
+        background: #f1c21b;
+        color: #000;
+    }
+    
+    .health-grade.grade-d {
+        background: #da1e28;
+    }
+    
+    .health-grade.grade-unknown {
+        background: var(--text-muted);
+    }
+    
+    /* Repo Info Bar */
+    .repo-info-bar {
+        display: flex;
+        gap: 2rem;
+        padding: 1.5rem;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+    
+    .repo-info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .info-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .info-value {
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+    
+    /* Stats Row */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Numbered Lists */
+    .numbered-list {
+        list-style: none;
+        counter-reset: item;
+        padding: 0;
+    }
+    
+    .numbered-list li {
+        counter-increment: item;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        background: var(--bg-secondary);
+        border-left: 3px solid var(--accent);
+        border-radius: 4px;
+    }
+    
+    .numbered-list li::before {
+        content: counter(item) ". ";
+        font-weight: 700;
+        color: var(--accent);
+        margin-right: 0.5rem;
+    }
+    
+    /* Recommendations List */
+    .recommendations-list {
+        list-style: none;
+        counter-reset: item;
+        padding: 0;
+    }
+    
+    .recommendations-list li {
+        counter-increment: item;
+        padding: 1rem;
+        padding-left: 1.5rem;
+        margin-bottom: 0.75rem;
+        background: var(--bg-secondary);
+        border-left: 3px solid #42be65;
+        border-radius: 4px;
+    }
+    
+    .recommendations-list li::before {
+        content: counter(item) ". ";
+        font-weight: 700;
+        color: #42be65;
+        margin-right: 0.5rem;
     }
 
     .title {

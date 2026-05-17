@@ -6,8 +6,8 @@ import httpx
 import os
 from dotenv import load_dotenv
 
-from models import AnalyzeRequest, ImpactReport, HealthResponse
-from github_service import get_pr_data, get_pr_diff
+from models import AnalyzeRequest, ImpactReport, HealthResponse, ScanRequest, RepoHealthReport, FragileFile
+from github_service import get_pr_data, get_pr_diff, get_repo_structure
 from analyzer import GeminiAnalyzer
 
 # Load environment variables
@@ -111,6 +111,77 @@ async def analyze_pr(request: AnalyzeRequest):
         )
 
 
+@app.post("/scan", response_model=RepoHealthReport)
+async def scan_repo(request: ScanRequest):
+    """
+    Scan a GitHub repository for health assessment.
+    
+    Args:
+        request: ScanRequest containing repo_url
+        
+    Returns:
+        RepoHealthReport with detailed health analysis
+        
+    Raises:
+        HTTPException: If repository cannot be scanned or analyzed
+    """
+    try:
+        logger.info(f"Scanning repository: {request.repo_url}")
+        
+        # Get GitHub token from environment
+        github_token = os.getenv("GITHUB_TOKEN", "")
+        
+        # Fetch repository structure
+        repo_structure = await get_repo_structure(request.repo_url, github_token)
+        logger.info(f"Fetched repo structure: {repo_structure['total_files']} files")
+        
+        # Analyze repository health using Gemini
+        health_analysis = await analyzer.analyze_repo_health(
+            source_files=repo_structure["source_files"],
+            test_files=repo_structure["test_files"],
+            doc_files=repo_structure["doc_files"],
+            metadata=repo_structure["metadata"]
+        )
+        logger.info(f"Health analysis complete: Score = {health_analysis.get('health_score', 'unknown')}")
+        
+        # Build fragile files list
+        fragile_files = [
+            FragileFile(**file_data)
+            for file_data in health_analysis.get("fragile_files", [])
+        ]
+        
+        # Combine results into RepoHealthReport
+        report = RepoHealthReport(
+            repo_name=repo_structure["metadata"]["name"],
+            repo_description=repo_structure["metadata"]["description"],
+            language=repo_structure["metadata"]["language"],
+            stars=repo_structure["metadata"]["stargazers_count"],
+            total_files=repo_structure["total_files"],
+            source_files_count=len(repo_structure["source_files"]),
+            test_files_count=len(repo_structure["test_files"]),
+            doc_files_count=len(repo_structure["doc_files"]),
+            health_score=health_analysis.get("health_score", "unknown"),
+            health_summary=health_analysis.get("health_summary", "Analysis unavailable — please try again."),
+            untested_modules=health_analysis.get("untested_modules", []),
+            fragile_files=fragile_files,
+            stale_docs=health_analysis.get("stale_docs", []),
+            top_risks=health_analysis.get("top_risks", []),
+            recommendations=health_analysis.get("recommendations", [])
+        )
+        
+        return report
+        
+    except HTTPException:
+        # Re-raise HTTPExceptions from github_service
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error during scan: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error during repository scan: {str(e)}"
+        )
+
+
 @app.get("/")
 async def root():
     """
@@ -125,7 +196,8 @@ async def root():
         "description": "Analyze GitHub PR impact using Google Gemini AI",
         "endpoints": {
             "health": "/health",
-            "analyze": "/analyze (POST)"
+            "analyze": "/analyze (POST)",
+            "scan": "/scan (POST)"
         }
     }
 
